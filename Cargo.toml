@@ -1,16 +1,16 @@
 [package]
-name = "project_name"
+name = "playground"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = ""
 keywords = []
-documentation = "https://docs.rs/project_name"
-repository = "https://github.com/qdwang/project_name"
+repository = "https://github.com/qdwang/playground-rs"
 
 [dev-dependencies]
 
 [dependencies]
+eframe = {version="0.22", features=["wgpu"]}
 
 [profile.release]
 codegen-units = 1
