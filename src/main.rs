@@ -3,7 +3,7 @@ use eframe::{self, egui};
 
 fn main() {
     let options = eframe::NativeOptions {
-        renderer: eframe::Renderer::Wgpu,
+        renderer: eframe::Renderer::Glow,
         initial_window_size: Some(egui::vec2(320.0, 240.0)),
         ..Default::default()
     };
