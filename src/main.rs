@@ -1,29 +1,30 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use eframe::{self, egui};
+use winit::{
+    event_loop::{EventLoop},
+    window::WindowBuilder,
+};
 
 fn main() {
-    let options = eframe::NativeOptions {
-        renderer: eframe::Renderer::Glow,
-        initial_window_size: Some(egui::vec2(320.0, 240.0)),
-        ..Default::default()
-    };
-
-    eframe::run_native(
-        "Test",
-        options,
-        Box::new(|cc| Box::new(MyApp)),
-    ).unwrap();
+    pollster::block_on(init());
 }
 
-struct MyApp;
+async fn init() {
+    let event_loop = EventLoop::new();
+    let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("abc");
-            if ui.button("123 cfggkj").clicked() {
-                ui.label("clicking");
-            }
-        });
-    }
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::all(),
+        dx12_shader_compiler: Default::default(),
+    });
+    
+    let surface = unsafe { instance.create_surface(&window) }.unwrap();
+
+    let adapter = instance.request_adapter(
+        &wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::default(),
+            compatible_surface: Some(&surface),
+            force_fallback_adapter: false,
+        },
+    ).await.unwrap();
+
+    println!("{:?}", adapter);
 }

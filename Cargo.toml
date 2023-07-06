@@ -10,7 +10,9 @@ repository = "https://github.com/qdwang/playground-rs"
 [dev-dependencies]
 
 [dependencies]
-eframe = {version="0.22"}
+pollster = "0.3.0"
+wgpu = "0.16.1"
+winit = "0.28.6"
 
 [profile.release]
 codegen-units = 1
