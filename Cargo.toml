@@ -10,11 +10,10 @@ repository = "https://github.com/qdwang/playground-rs"
 [dev-dependencies]
 
 [dependencies]
-env_logger = "0.10.0"
-log = "0.4.19"
-pollster = "0.3.0"
-wgpu = "0.16.1"
-winit = "0.28.6"
+env_logger = "0.10"
+log = "0.4"
+pollster = "0.3"
+wgpu = "0.16"
 
 [profile.release]
 codegen-units = 1
