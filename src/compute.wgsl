@@ -7,7 +7,6 @@ var<storage, read_write> output: array<f32>;
 @group(0) @binding(2)
 var<storage> shared_data: array<f32>; 
 
-// p1, p2
 @compute @workgroup_size(2)
 fn main(@builtin(local_invocation_index) index: u32, @builtin(workgroup_id) group_id: vec3<u32>) {
     var v0 = unpack2x16unorm(input[index - 1u]).y;
