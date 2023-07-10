@@ -26,14 +26,12 @@ async fn init() {
         .await
         .unwrap();
 
-    let info = adapter.get_info();
-
     let compute_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: None,
         source: wgpu::ShaderSource::Wgsl(include_str!("compute.wgsl").into()),
     });
 
-    let numbers = &[132u32, 241,5, 67];
+    let numbers = &[132u32, 241, 5, 67];
     // Gets the size in bytes of the buffer.
     let slice_size = numbers.len() * std::mem::size_of::<u32>();
     let size = slice_size as wgpu::BufferAddress;
@@ -61,6 +59,13 @@ async fn init() {
             | wgpu::BufferUsages::COPY_DST
             | wgpu::BufferUsages::COPY_SRC,
     });
+    let storage_buffer1 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Storage Buffer"),
+        contents: bytemuck::cast_slice(&[9527]),
+        usage: wgpu::BufferUsages::STORAGE
+            | wgpu::BufferUsages::COPY_DST
+            | wgpu::BufferUsages::COPY_SRC,
+    });
 
     // A bind group defines how buffers are accessed by shaders.
     // It is to WebGPU what a descriptor set is to Vulkan.
@@ -77,14 +82,19 @@ async fn init() {
     });
 
     // Instantiates the bind group, once again specifying the binding of buffers.
-    let bind_group_layout = compute_pipeline.get_bind_group_layout(0);
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
-        layout: &bind_group_layout,
-        entries: &[wgpu::BindGroupEntry {
-            binding: 0,
-            resource: storage_buffer.as_entire_binding(),
-        }],
+        layout: &compute_pipeline.get_bind_group_layout(0),
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: storage_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: storage_buffer1.as_entire_binding(),
+            },
+        ],
     });
 
     // A command encoder executes one or many pipelines.
@@ -122,7 +132,7 @@ async fn init() {
         // Gets contents of buffer
         let data = buffer_slice.get_mapped_range();
         // Since contents are got in bytes, this converts these bytes back to u32
-        let result : Vec<u32> = bytemuck::cast_slice(&data).to_vec();
+        let result: Vec<u32> = bytemuck::cast_slice(&data).to_vec();
 
         // With the current interface, we have to make sure all mapped views are
         // dropped before we unmap the buffer.
