@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use wgpu::util::DeviceExt;
 
 fn main() {
