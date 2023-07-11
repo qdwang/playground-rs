@@ -1,10 +1,71 @@
-use wgpu::util::DeviceExt;
+use wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, ShaderModel, ShaderModule, ComputePipeline};
 
 fn main() {
-    pollster::block_on(init());
+    let data = std::fs::read("test_data").unwrap();
+    pollster::block_on(init(bytemuck::cast_slice(&data)));
 }
 
-async fn init() {
+fn gen_pipeline_and_bindgroup(
+    device: &Device,
+    shader_str: &str,
+    buffers: &[(&Buffer, bool)],
+) -> (ComputePipeline, BindGroup) {
+    let mut bind_group_layout_entries = vec![];
+    let mut bind_group_entries = vec![];
+
+    for (index, (buffer, read_only)) in buffers.into_iter().enumerate() {
+        bind_group_layout_entries.push(wgpu::BindGroupLayoutEntry {
+            binding: index as u32,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Storage {
+                    read_only: *read_only,
+                },
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        });
+
+        bind_group_entries.push(wgpu::BindGroupEntry {
+            binding: index as u32,
+            resource: buffer.as_entire_binding(),
+        });
+    }
+
+    let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: None,
+        entries: &bind_group_layout_entries,
+    });
+
+    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: None,
+        layout: &bind_group_layout,
+        entries: &bind_group_entries,
+    });
+
+    let compute_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: None,
+        source: wgpu::ShaderSource::Wgsl(shader_str.into()),
+    });
+
+    let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        label: None,
+        layout: Some(
+            &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[&bind_group_layout],
+                push_constant_ranges: &[],
+            }),
+        ),
+        module: &compute_module,
+        entry_point: "main",
+    });
+
+    (pipeline, bind_group)
+}
+
+async fn init(data: &[u16]) {
     env_logger::init();
 
     let instance = wgpu::Instance::default();
@@ -24,11 +85,6 @@ async fn init() {
         )
         .await
         .unwrap();
-
-    let compute_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: None,
-        source: wgpu::ShaderSource::Wgsl(include_str!("compute.wgsl").into()),
-    });
 
     let numbers = &[132u16, 241, 5, 67];
     // Gets the size in bytes of the buffer.
@@ -58,81 +114,15 @@ async fn init() {
         usage: wgpu::BufferUsages::STORAGE,
     });
 
-    // A bind group defines how buffers are accessed by shaders.
-    // It is to WebGPU what a descriptor set is to Vulkan.
-    // `binding` here refers to the `binding` of a buffer in the shader (`layout(set = 0, binding = 0) buffer`).
-
-    // A pipeline specifies the operation of a shader
-
-    let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: None,
-        entries: &[
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: true },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 2,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: true },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            },
+    let (compute_pipeline, bind_group) = gen_pipeline_and_bindgroup(
+        &device,
+        include_str!("compute.wgsl"),
+        &[
+            (&buffer_input, true),
+            (&buffer_output, false),
+            (&buffer_shared_data, true),
         ],
-    });
-
-    // Instantiates the pipeline.
-    let compute_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: None,
-        layout: Some(
-            &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: None,
-                bind_group_layouts: &[&bind_group_layout],
-                push_constant_ranges: &[],
-            }),
-        ),
-        module: &compute_module,
-        entry_point: "main",
-    });
-
-    // Instantiates the bind group, once again specifying the binding of buffers.
-    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: None,
-        layout: &bind_group_layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: buffer_input.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: buffer_output.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: buffer_shared_data.as_entire_binding(),
-            },
-        ],
-    });
+    );
 
     // A command encoder executes one or many pipelines.
     // It is to WebGPU what a command buffer is to Vulkan.
