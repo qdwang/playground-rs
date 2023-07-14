@@ -1,13 +1,19 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rand::Rng;
 
-fn iter_fn<'a, T: Iterator<Item = &'a u8>>(iter: T) -> u64 {
-    iter.fold(0u64, |acc, x| acc + *x as u64)
+fn iter_fn<'a, T: Iterator<Item = &'a u8>>(mut iter: T) -> u64 {
+    let mut sum = 0u64;
+    while let Some(x) = iter.next() {
+        sum += *x as u64;
+    }
+    sum
 }
 fn index_fn(data: &[u8]) -> u64 {
     let mut sum = 0u64;
-    for x in data {
-        sum += *x as u64;
+    let mut i = 0;
+    while i < data.len() {
+        sum += data[i] as u64;
+        i += 1;
     }
     sum
 }
