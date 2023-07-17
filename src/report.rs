@@ -1,4 +1,6 @@
 use std::error::Error;
+
+/// You can use `.source()` to get the first real source in Report 
 pub(crate) struct Report {
     loc: core::panic::Location<'static>,
     err: Box<dyn Error>,
@@ -41,7 +43,7 @@ impl std::fmt::Display for Report {
     }
 }
 impl Error for Report {
-    /// This method will ignore the report stack and get the first real source in Report
+    /// This method will ignore the report stack and get the first real source
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self.err.downcast_ref::<Report>() {
             Some(e) => e.source(),
