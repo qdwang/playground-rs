@@ -12,10 +12,11 @@ criterion = "0.5"
 rand = "0.8"
 
 [[bench]]
-name = "my_bench_0"
+name = "bench"
 harness = false
 
 [dependencies]
+bytemuck = "1.13.1"
 erreport = "0.1.1"
 
 [profile.release]
