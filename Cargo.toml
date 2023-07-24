@@ -16,8 +16,7 @@ name = "bench"
 harness = false
 
 [dependencies]
-bytemuck = "1.13.1"
-erreport = "0.1.1"
+wide = "0.7.11"
 
 [profile.release]
 codegen-units = 1
