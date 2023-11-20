@@ -16,7 +16,8 @@ name = "bench"
 harness = false
 
 [dependencies]
-bytemuck = "1.13.1"
+# bincode = "1.3.3"
+# tfhe = { version = "*", features = ["boolean", "shortint", "integer", "aarch64-unix"] }
 
 [profile.release]
 codegen-units = 1
