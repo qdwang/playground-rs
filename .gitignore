@@ -13,3 +13,8 @@ Cargo.lock
 
 test_data
 dump*
+
+*.HEIC
+*.dng
+*.DNG
+*.jxl
